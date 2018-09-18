@@ -20,19 +20,19 @@ property.load <- property %>%
 
 pdf(NULL)
 
-header <- dashboardHeader(title = "Star Wars Dashboard",
+header <- dashboardHeader(title = "Property Records Dashboard",
                           dropdownMenu(type = "notifications",
-                                       notificationItem(text = "5 escape pods deployed", 
+                                       notificationItem(text = "yass", 
                                                         icon = icon("users"))
                           ),
                           dropdownMenu(type = "tasks", badgeStatus = "success",
                                        taskItem(value = 110, color = "green",
-                                                "Midichlorians")
+                                                "MahQueen")
                           ),
                           dropdownMenu(type = "messages",
                                        messageItem(
-                                         from = "Princess Leia",
-                                         message = HTML("Help Me Obi-Wan Kenobi! <br> You're my only hope."),
+                                         from = "Donald J. Trump",
+                                         message = HTML("Help me collude! <br> You're my only hope."),
                                          icon = icon("exclamation-circle"))
                           )
 )
@@ -42,18 +42,18 @@ sidebar <- dashboardSidebar(
     id = "tabs",
     menuItem("Plot", icon = icon("bar-chart"), tabName = "plot"),
     menuItem("Table", icon = icon("table"), tabName = "table", badgeLabel = "new", badgeColor = "green"),
-    selectInput("worldSelect",
-                "Homeworld:",
-                choices = sort(unique(starwars.load$homeworld)),
+    selectInput("categorySelect",
+                "Categories:",
+                choices = sort(unique(property.load$category_code_description)),
                 multiple = TRUE,
                 selectize = TRUE,
-                selected = c("Naboo", "Tatooine")),
+                selected = c("Single Family", "Vacant Land", "Commercial")),
     # Birth Selection
-    sliderInput("birthSelect",
-                "Birth Year:",
-                min = min(starwars.load$birth_year, na.rm = T),
-                max = max(starwars.load$birth_year, na.rm = T),
-                value = c(min(starwars.load$birth_year, na.rm = T), max(starwars.load$birth_year, na.rm = T)),
+    sliderInput("yearSelect",
+                "Sale Year:",
+                min = min(property.load$sale_year, na.rm = T),
+                max = max(property.load$sale_year, na.rm = T),
+                value = c(min(property.load$sale_year, na.rm = T), max(property.load$sale_year, na.rm = T)),
                 step = 1)
   )
 )
