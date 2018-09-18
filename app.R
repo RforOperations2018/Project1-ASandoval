@@ -61,19 +61,19 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(tabItems(
   tabItem("plot",
           fluidRow(
-            infoBoxOutput("mass"),
-            valueBoxOutput("height")
+            infoBoxOutput("sale_price"),
+            valueBoxOutput("zipcode")
           ),
           fluidRow(
             tabBox(title = "Plot",
                    width = 12,
-                   tabPanel("Mass", plotlyOutput("plot_mass")),
-                   tabPanel("Height", plotlyOutput("plot_height")))
+                   tabPanel("sale_price", plotlyOutput("plot_price")),
+                   tabPanel("zipcode", plotlyOutput("plot_zipcode")))
           )
   ),
   tabItem("table",
           fluidPage(
-            box(title = "Selected Character Stats", DT::dataTableOutput("table"), width = 12))
+            box(title = "Selected Category Stats", DT::dataTableOutput("table"), width = 12))
   )
 )
 )
@@ -82,26 +82,26 @@ ui <- dashboardPage(header, sidebar, body)
 
 # Define server logic
 server <- function(input, output) {
-  swInput <- reactive({
-    starwars <- starwars.load %>%
+  propInput <- reactive({
+    property <- property.load %>%
       # Slider Filter
-      filter(birth_year >= input$birthSelect[1] & birth_year <= input$birthSelect[2])
-    # Homeworld Filter
-    if (length(input$worldSelect) > 0 ) {
-      starwars <- subset(starwars, homeworld %in% input$worldSelect)
+      filter(sale_year >= input$yearSelect[1] & sale_year <= input$saleSelect[2])
+    # Category Filter
+    if (length(input$categorySelect) > 0 ) {
+      property <- subset(property, category_code_description %in% input$categorySelect)
     }
     
-    return(starwars)
+    return(property)
   })
   # Reactive melted data
-  mwInput <- reactive({
-    swInput() %>%
-      melt(id = "name")
+  mInput <- reactive({
+    propInput() %>%
+      melt(id = "category_code_description")
   })
-  # A plot showing the mass of characters
-  output$plot_mass <- renderPlotly({
-    dat <- subset(mwInput(), variable == "mass")
-    ggplot(data = dat, aes(x = name, y = as.numeric(value), fill = name)) + geom_bar(stat = "identity")
+  # A plot showing the sale price of properties
+  output$plot_price <- renderPlotly({
+    dat <- subset(mInput(), variable == "sale_year")
+    ggplot(data = dat, aes(x = category_code_description, fill = category_code_description)) + geom_bar(stat = "identity")
   })
   # A plot showing the height of characters
   output$plot_height <- renderPlotly({
