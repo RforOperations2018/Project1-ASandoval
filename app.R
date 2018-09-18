@@ -6,6 +6,7 @@ library(dplyr)
 library(plotly)
 library(shinythemes)
 library(stringr)
+library(shinydashboard)
 
 # Upload Philadelphia property assessment data from Opendataphilly
 # Many fields were removed to decrease data upload
@@ -19,139 +20,113 @@ property.load <- property %>%
 
 pdf(NULL)
 
-
-# Define UI for application that draws a histogram
-ui <- navbarPage("Property Data of Philadelphia", 
-                 tabPanel("Plot",
-                          sidebarLayout(
-                            sidebarPanel(
-                              # Selecting type of crime
-                              selectInput("categorySelect",
-                                          "Type of Property:",
-                                          choices = sort(unique(property.load$category_code_description)),
-                                          multiple = TRUE,
-                                          selectize = TRUE,
-                                          selected = c("Single Family", "Vacant Land", "Industrial", "Commercial")),
-                              
-                              # Year of Incident Slider
-                              sliderInput("yearSelect",
-                                          "Year Property was Bought:",
-                                          min = min(property.load$sale_year, na.rm = T),
-                                          max = max(property.load$sale_year, na.rm = T),
-                                          value = c(min(property.load$sale_year, na.rm = T), max(property.load$sale_year, na.rm = T)),
-                                          step = 10),
-                              # IGNORE
-                              # check box Input for whether incident occured inside
-                              checkboxGroupInput(inputId = "IncidentInside",
-                                                 label = "Was the Incident Inside?:",
-                                                 choiceNames = list("Yes", "No"),
-                                                 choiceValues = list("1", "0")
-                              ),
-                              
-                              # action button
-                              actionButton("reset", "Reset Filters", icon = icon("refresh"))
-                            ),
-                            
-                            # Output plot
-                            mainPanel(
-                              plotlyOutput("categoryplot"), 
-                              plotlyOutput("priceplot"))
-                          )),
-                 
-                 # Data Table
-                 tabPanel("Table",
-                          inputPanel(
-                            downloadButton("downloadData","Download Property Assessment Data")
+header <- dashboardHeader(title = "Star Wars Dashboard",
+                          dropdownMenu(type = "notifications",
+                                       notificationItem(text = "5 escape pods deployed", 
+                                                        icon = icon("users"))
                           ),
-                          fluidPage(DT::dataTableOutput("table"))
-                 )
+                          dropdownMenu(type = "tasks", badgeStatus = "success",
+                                       taskItem(value = 110, color = "green",
+                                                "Midichlorians")
+                          ),
+                          dropdownMenu(type = "messages",
+                                       messageItem(
+                                         from = "Princess Leia",
+                                         message = HTML("Help Me Obi-Wan Kenobi! <br> You're my only hope."),
+                                         icon = icon("exclamation-circle"))
+                          )
 )
 
-# Define server logic
-server <- function(input, output, session = session) {
-  # Filtered propert data
-  propInput <- reactive({
-    property <- property.load %>%
-      # Slider Filter
-      filter(sale_year >= input$yearSelect[1] & sale_year <= input$yearSelect[2])
-    
-    # Type of Crime Filter
-    if (length(input$categorySelect) > 0 ) {
-      property <- subset(property, category_code_description %in% input$categorySelect)
-    } 
-    # IGNORE THIS TOO
-    # Location of Incident
-    if (length(input$IncidentInside) > 0 ) {
-      shootings <- subset(shootings, inside %in% input$IncidentInside)
-    }
-    
-    return(property)
-  })
-  # Reactive melted data?
-  meltInput <- reactive({
-    propInput() %>%
-      melt(id = "category_code_description")
-  })
-  
-  # column plot showing types of wounds
-  output$categoryplot <- renderPlotly({
-    dat <- propInput()
-    ggplotly(
-      ggplot(data = dat, aes(x = category_code_description, fill = category_code_description )) + 
-        geom_bar(position = position_dodge(width = 0.9)) +
-        xlab("Types of Property") +
-        theme(axis.text.x = element_text (angle = 45,
-                                          hjust = 1),
-              legend.title = element_blank()) +
-        guides(color = FALSE)) 
-    
-  })
-  # HOLD UP ON THIS
-  # sex bar plot
-  output$sexplot <- renderPlotly({
-    dat <- propInput()
-    ggplotly(
-      ggplot(data = dat, aes(x = sex, fill = sex)) + 
-        geom_bar (position = position_dodge(width = 0.9)) +
-        xlab("Sex") +
-        theme(legend.title = element_blank()) +
-        guides(color = FALSE))
-  })
-  
-  # Data Table
-  output$table <- DT::renderDataTable({
-    property <- propInput()
-    subset(property, select = c(category_code_description, geographic_ward, location, market_value, owner_1, parcel_number, sale_date, sale_price))
-  })
-  
-  # Updating the URL Bar
-  observe({
-    print(reactiveValuesToList(input))
-    session$doBookmark()
-  })
-  
-  onBookmarked(function(url) {
-    updateQueryString(url)
-  })
-  
-  # Download data in the datatable
-  output$downloadData <- downloadHandler(
-    filename = function() {
-      paste("property", Sys.Date(), ".csv", sep="")
-    },
-    
-    content = function(file) {
-      write.csv(propInput(), file)
-    }
+sidebar <- dashboardSidebar(
+  sidebarMenu(
+    id = "tabs",
+    menuItem("Plot", icon = icon("bar-chart"), tabName = "plot"),
+    menuItem("Table", icon = icon("table"), tabName = "table", badgeLabel = "new", badgeColor = "green"),
+    selectInput("worldSelect",
+                "Homeworld:",
+                choices = sort(unique(starwars.load$homeworld)),
+                multiple = TRUE,
+                selectize = TRUE,
+                selected = c("Naboo", "Tatooine")),
+    # Birth Selection
+    sliderInput("birthSelect",
+                "Birth Year:",
+                min = min(starwars.load$birth_year, na.rm = T),
+                max = max(starwars.load$birth_year, na.rm = T),
+                value = c(min(starwars.load$birth_year, na.rm = T), max(starwars.load$birth_year, na.rm = T)),
+                step = 1)
   )
-  
-  # Reset Filter Data
-  observeEvent(input$reset, {
-    updateSelectInput(session, "categorySelect", selected = c("Single Family", "Vacant Land", "Industrial", "Commercial"))
-    updateSliderInput(session, "yearSelect", value = c(min(property.load$sale_year, na.rm = T), max(property.load$sale_year, na.rm = T)))
-    showNotification("You have successfully reset the filters", type = "message")
+)
+
+body <- dashboardBody(tabItems(
+  tabItem("plot",
+          fluidRow(
+            infoBoxOutput("mass"),
+            valueBoxOutput("height")
+          ),
+          fluidRow(
+            tabBox(title = "Plot",
+                   width = 12,
+                   tabPanel("Mass", plotlyOutput("plot_mass")),
+                   tabPanel("Height", plotlyOutput("plot_height")))
+          )
+  ),
+  tabItem("table",
+          fluidPage(
+            box(title = "Selected Character Stats", DT::dataTableOutput("table"), width = 12))
+  )
+)
+)
+
+ui <- dashboardPage(header, sidebar, body)
+
+# Define server logic
+server <- function(input, output) {
+  swInput <- reactive({
+    starwars <- starwars.load %>%
+      # Slider Filter
+      filter(birth_year >= input$birthSelect[1] & birth_year <= input$birthSelect[2])
+    # Homeworld Filter
+    if (length(input$worldSelect) > 0 ) {
+      starwars <- subset(starwars, homeworld %in% input$worldSelect)
+    }
+    
+    return(starwars)
+  })
+  # Reactive melted data
+  mwInput <- reactive({
+    swInput() %>%
+      melt(id = "name")
+  })
+  # A plot showing the mass of characters
+  output$plot_mass <- renderPlotly({
+    dat <- subset(mwInput(), variable == "mass")
+    ggplot(data = dat, aes(x = name, y = as.numeric(value), fill = name)) + geom_bar(stat = "identity")
+  })
+  # A plot showing the height of characters
+  output$plot_height <- renderPlotly({
+    dat <- subset(mwInput(),  variable == "height")
+    ggplot(data = dat, aes(x = name, y = as.numeric(value), fill = name)) + geom_bar(stat = "identity")
+  })
+  # Data table of characters
+  output$table <- DT::renderDataTable({
+    subset(swInput(), select = c(name, height, mass, birth_year, homeworld, species, films))
+  })
+  # Mass mean info box
+  output$mass <- renderInfoBox({
+    sw <- swInput()
+    num <- round(mean(sw$mass, na.rm = T), 2)
+    
+    infoBox("Avg Mass", value = num, subtitle = paste(nrow(sw), "characters"), icon = icon("balance-scale"), color = "purple")
+  })
+  # Height mean value box
+  output$height <- renderValueBox({
+    sw <- swInput()
+    num <- round(mean(sw$height, na.rm = T), 2)
+    
+    valueBox(subtitle = "Avg Height", value = num, icon = icon("sort-numeric-asc"), color = "green")
   })
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server, enableBookmarking = "url")
+shinyApp(ui = ui, server = server)
