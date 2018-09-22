@@ -1,0 +1,13 @@
+name: Project1-ASandoval
+title: Project1-ASandoval
+username:
+account: assandoval
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 463183
+bundleId: 1599257
+url: https://assandoval.shinyapps.io/Project1-ASandoval/
+when: 1537595972.93111
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: Copy of projectdata_4.csv|projectdata_2.csv|projectdata_3.csv|projectdata_4.csv|projectdata_5.csv|projectdata_6.csv|projectdata.csv

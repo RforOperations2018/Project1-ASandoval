@@ -15,6 +15,7 @@ require(scales)
 # Data can be found here: https://www.phila.gov/property/data/
 # There were originally 580,919 rows of data. I used a random number generator to get 2000 rows. 
 # It now runs faster. 
+# link to shinyapp.io https://assandoval.shinyapps.io/Project1-ASandoval/ 
 property.load <- read_csv ("projectdata_7.csv")
 
 pdf(NULL)
