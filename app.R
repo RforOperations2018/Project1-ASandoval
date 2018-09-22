@@ -27,6 +27,7 @@ header <- dashboardHeader(title = "Philadelphia Properties",
                                          icon = icon("exclamation-circle"))
                           )
 )
+choices <- c("Select All", "1", "2", "3", "4")
 
 sidebar <- dashboardSidebar(
   # bars on the side
@@ -53,13 +54,13 @@ sidebar <- dashboardSidebar(
                        label = "How Many Bathrooms does the Property Have?:",
                        choiceNames = list("0", "1", "2", "3", "4", "5", "6"),
                        choiceValues = list("0", "1", "2", "3", "4", "5", "6")),
-    # Selec input for ward
-    selectInput("wardSelect",
-                "Ward:",
-                choices = sort(unique(property.load$geographic_ward)),
+    # Select input for story
+    selectInput("storySelect",
+                "Story:",
+                choices = sort(unique(property.load$number_stories)),
                 multiple = TRUE,
                 selectize = TRUE,
-                selected = c("1", "2", "3", "4", "5"))
+                selected = c("0","1", "2", "3", "4", "5", "6","22", "28", "31", "33"))
   )
 )
 
@@ -104,10 +105,10 @@ server <- function(input, output) {
     if (length(input$bathroomSelect) > 0 ) {
       property <- subset(property, number_of_bathrooms %in% input$bathroomSelect)
     }
-    # Select Ward
-    if (length(input$wardSelect) > 0 ) {
-      property <- subset(property, geographic_ward %in% input$wardSelect)
-    }  
+    # Select Story
+    if (length(input$storySelect) > 0 ) {
+      property <- subset(property, number_stories %in% input$storySelect)
+    }
     return(property)
   })
   # Reactive melted data
