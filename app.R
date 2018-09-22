@@ -12,7 +12,9 @@ library(readr)
 # Upload Philadelphia property assessment data from Opendataphilly
 # Many fields were removed to decrease data upload
 # Data can be found here: https://www.phila.gov/property/data/
-property.load <- read_csv ("projectdata_2.csv")
+# There were originally 580,919 rows of data. I used a random number generator to get 2000 rows. 
+# It now runs faster. 
+property.load <- read_csv ("projectdata_5.csv")
 
 pdf(NULL)
 ##GOOD A
@@ -28,7 +30,7 @@ header <- dashboardHeader(title = "Property Records Dashboard",
                           dropdownMenu(type = "messages",
                                        messageItem(
                                          from = "Donald J. Trump",
-                                         message = HTML("Help me collude! You're my only hope."),
+                                         message = HTML("Help me expand Trump Organization!"),
                                          icon = icon("exclamation-circle"))
                           )
 )
@@ -100,14 +102,21 @@ server <- function(input, output) {
 
   # A plot showing the sale price of properties
   output$plot_price <- renderPlotly({
-    dat <- subset(mInput(), variable == "sale_price")
-    ggplot(data = dat, aes(x = sale_price, fill = sale_year)) + geom_bar(stat = "identity")
+    property <- propInput()
+    ggplot(data = property, aes(x = sale_year, y = change_value, fill = category_code_description))  + 
+      geom_point(stroke = 0) +
+    scale_y_continuous(name="Change Value",breaks=c(-1000000, -500000, 0, 50000, 100000, 1000000, 10000000)) +
+    scale_x_continuous(name="Sale Year",breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010))
   })
   # A plot showing the height of characters
   output$plot_zipcode <- renderPlotly({
     property <- propInput()
-    ggplot(data = property, aes(x = category_code_description, y = year_built)) + geom_bar(stat = "identity") + guides(fill=FALSE)
+    ggplot(data = property, aes(x = year_built, y = total_area, fill = category_code_description )) + 
+      geom_point(stroke = 0) +
+      scale_y_continuous(name="Total Area") +
+      scale_x_continuous(name="Year Built")
   })
+
   # Data table of characters
   output$table <- DT::renderDataTable({
     subset(propInput(), select = c(category_code_description, location, market_value, owner_1, parcel_number, sale_date, sale_price))
