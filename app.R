@@ -53,13 +53,13 @@ sidebar <- dashboardSidebar(
                        label = "How Many Bathrooms does the Property Have?:",
                        choiceNames = list("0", "1", "2", "3", "4", "5", "6"),
                        choiceValues = list("0", "1", "2", "3", "4", "5", "6")),
-    # Numeric input for ward
-    numericInput(inputId = "wardSelect", 
-                 label = "Wards:", 
-                 min = min(property.load$geographic_ward, na.rm = T), 
-                 max = max(property.load$geographic_ward, na.rm = T),
-                 value = min(property.load$geographic_ward, na.rm = T),
-                 step = 1)
+    # Selec input for ward
+    selectInput("wardSelect",
+                "Ward:",
+                choices = sort(unique(property.load$geographic_ward)),
+                multiple = TRUE,
+                selectize = TRUE,
+                selected = c("1", "2", "3", "4", "5"))
   )
 )
 
@@ -105,7 +105,7 @@ server <- function(input, output) {
       property <- subset(property, number_of_bathrooms %in% input$bathroomSelect)
     }
     # Select Ward
-    if (length(input$wardSelect) > 0) {
+    if (length(input$wardSelect) > 0 ) {
       property <- subset(property, geographic_ward %in% input$wardSelect)
     }  
     return(property)
