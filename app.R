@@ -19,15 +19,7 @@ property.load <- read_csv ("projectdata_7.csv")
 
 pdf(NULL)
 
-header <- dashboardHeader(title = "Property Records Dashboard",
-                          dropdownMenu(type = "notifications",
-                                       notificationItem(text = "New Users!", 
-                                                        icon = icon("users"))
-                          ),
-                          dropdownMenu(type = "tasks", badgeStatus = "success",
-                                       taskItem(value = 110, color = "red",
-                                                "loading")
-                          ),
+header <- dashboardHeader(title = "Philadelphia Properties",
                           dropdownMenu(type = "messages",
                                        messageItem(
                                          from = "Donald J. Trump",
@@ -37,10 +29,11 @@ header <- dashboardHeader(title = "Property Records Dashboard",
 )
 
 sidebar <- dashboardSidebar(
+  # bars on the side
   sidebarMenu(
     id = "tabs",
     menuItem("Plot", icon = icon("bar-chart"), tabName = "plot"),
-    menuItem("Table", icon = icon("table"), tabName = "table", badgeLabel = "new", badgeColor = "blue"),
+    menuItem("Table", icon = icon("table"), tabName = "table"),
     # Category Select
     selectInput("categorySelect",
                 "Types of Properties:",
@@ -55,16 +48,14 @@ sidebar <- dashboardSidebar(
                 max = max(property.load$sale_year, na.rm = T),
                 value = c(min(property.load$sale_year, na.rm = T), max(property.load$sale_year, na.rm = T)),
                 step = 25),
-  
-    # Check box Input for whether incident occured inside
+    # Check box Input for how many bathrooms
     checkboxGroupInput(inputId = "bathroomSelect",
                        label = "How Many Bathrooms does the Property Have?:",
                        choiceNames = list("0", "1", "2", "3", "4", "5", "6"),
                        choiceValues = list("0", "1", "2", "3", "4", "5", "6")),
-    
     # Numeric input for ward
     numericInput(inputId = "wardSelect", 
-                 label = "Wards", 
+                 label = "Wards:", 
                  min = min(property.load$geographic_ward, na.rm = T), 
                  max = max(property.load$geographic_ward, na.rm = T),
                  value = min(property.load$geographic_ward, na.rm = T),
@@ -73,24 +64,26 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(tabItems(
+  # names of boxes
   tabItem("plot",
           fluidRow(
             infoBoxOutput("avgmarket"),
             infoBoxOutput("avgprice"),
             infoBoxOutput("totaltaxland")
           ),
+   # names of the plot tabs
           fluidRow(
-            tabBox(title = "Plot",
-                   width = 12,
-                   tabPanel("Property Change of Value", plotlyOutput("plot_value")),
-                   tabPanel("Properties by Ward", plotlyOutput("plot_properties")),
-                   tabPanel("Purchases by Year", plotlyOutput("plot_years")))
+          tabBox(title = "Plot", width = 12,
+             tabPanel("Property Change of Value", plotlyOutput("plot_value")),
+             tabPanel("Properties by Ward", plotlyOutput("plot_properties")),
+             tabPanel("Purchases by Year", plotlyOutput("plot_years")))
           )
-  ),
+          ),
+  # Table name
   tabItem("table",
           fluidPage(
             box(title = "Philadelphia Property Assessment Data", DT::dataTableOutput("table"), width = 12))
-  )
+         )
 )
 )
 
@@ -100,8 +93,8 @@ server <- function(input, output) {
   propInput <- reactive({
     property <- property.load  %>%
       
-      # Slider Filter
-      filter(sale_year >= input$yearSelect[1] & sale_year <= input$yearSelect[2])
+    # Slider Filter
+    filter(sale_year >= input$yearSelect[1] & sale_year <= input$yearSelect[2])
     
     # Category Filter
     if (length(input$categorySelect) > 0 ) {
@@ -111,10 +104,10 @@ server <- function(input, output) {
     if (length(input$bathroomSelect) > 0 ) {
       property <- subset(property, number_of_bathrooms %in% input$bathroomSelect)
     }
+    # Select Ward
     if (length(input$wardSelect) > 0) {
       property <- subset(property, geographic_ward %in% input$wardSelect)
     }  
-  
     return(property)
   })
   # Reactive melted data
@@ -123,65 +116,69 @@ server <- function(input, output) {
     property_m <- property %>%
       melt(id = "category_code_description")
   })
-
   # A plot showing the sale price of properties
   output$plot_value <- renderPlotly({
     property <- propInput()
-    ggplot(data = property, aes(x = sale_year, y = change_value, fill = category_code_description))  + 
+    ggplot(data = property, 
+           aes(x = sale_year, 
+               y = change_value, 
+               fill = category_code_description))  + 
       geom_point(stroke = 0) +
-      guides(fill=FALSE) +
-      scale_y_continuous(name="Property Change of Value", labels = comma, breaks=c(-10000000,-800000, -600000,
-                                                                                   -400000, -200000, 0, 200000,
-                                                                                   400000, 600000, 800000, 1000000)) +
-      scale_x_continuous(name="Sale Year", breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
+      guides(fill = FALSE) +
+      scale_y_continuous(name = "Property Change of Value", 
+                         labels = comma, 
+                         breaks = c(-10000000,-800000, -600000, -400000, -200000, 0, 200000, 400000, 600000, 800000, 1000000)) +
+      scale_x_continuous(name = "Sale Year", 
+                         breaks = c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
       theme(legend.title = element_blank())
   })
-  
  # A plot showing properties by ward
   output$plot_properties <- renderPlotly({
     property <- propInput()
-    ggplot(data = property, aes(x = geographic_ward, fill = category_code_description)) +
+    ggplot(data = property, 
+           aes(x = geographic_ward,
+               fill = category_code_description)) +
       geom_bar(position = "stack") +
-      guides(fill=FALSE) +
-      scale_y_continuous( name="Count of Properties") +
-      scale_x_continuous( name="Wards", breaks=c(1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 66))
+      guides(fill = FALSE) +
+      scale_y_continuous(name = "Count of Properties") +
+      scale_x_continuous(name = "Wards", 
+                          breaks = c(1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 66))
   })
-
   # A plot showing the the fequency of properties purchased over the years
   output$plot_years <- renderPlotly({
     property <- propInput()
-    ggplot(data = property, aes(x = sale_year, color = category_code_description ))  + 
+    ggplot(data = property, 
+           aes(x = sale_year, 
+               color = category_code_description ))  + 
       geom_freqpoly() +
-      guides(fill=FALSE) +
-      scale_x_continuous(name = "Sale Year",breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
+      guides(fill = FALSE) +
+      scale_x_continuous(name = "Sale Year",
+                         breaks = c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
       scale_y_continuous(name = "Count of Property Purchases") +
       theme(legend.title = element_blank())
   })
-  
   # Data table of Assessment
   output$table <- DT::renderDataTable({
     subset(propInput(), select = c(category_code_description, location, market_value, owner_1, parcel_number, sale_date, sale_price))
   })
-  # Average current market value
+  # Average current market value box
   output$avgmarket <- renderInfoBox({
     proper <- propInput()
     num <- round(mean(property.load$market_value, na.rm = T), 0)
     valueBox(subtitle = "Average Market Value", value = num, icon = icon("usd"), color = "red")
-    #infoBox("Avg Market Value", value = num, subtitle = paste(nrow(proper), "characters"), icon = icon("balance-scale"), color = "purple")
   })
-  # Average sale price
+  # Average sale price box
   output$avgprice <- renderValueBox({
     proper <- propInput()
     num <- round(mean(property.load$sale_price, na.rm = T), 0)
     valueBox(subtitle = "Average Sale Price", value = num, icon = icon("credit-card"), color = "blue")
   })
-  # Total Taxable Land
+  # Total Taxable Land box
   output$totaltaxland <- renderValueBox({
     proper <- propInput()
     num <- sum(property.load$taxable_land, na.rm = T)
-    valueBox(subtitle = "Total Taxable Land", value = num, icon = icon("thumbs-up"), color = "light-blue")
+    valueBox(subtitle = "Total Taxable Land", value = num, icon = icon("thumbs-up"), color = "purple")
   })
 }
-
 # Run the application 
 shinyApp(ui = ui, server = server)
