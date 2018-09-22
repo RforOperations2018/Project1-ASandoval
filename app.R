@@ -61,8 +61,8 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(tabItems(
   tabItem("plot",
           fluidRow(
-            infoBoxOutput("price"),
-            valueBoxOutput("zipcode")
+            infoBoxOutput("avgmarket"),
+            valueBoxOutput("avgprice")
           ),
           fluidRow(
             tabBox(title = "Plot",
@@ -79,7 +79,6 @@ body <- dashboardBody(tabItems(
 )
 )
 
-
 ui <- dashboardPage(header, sidebar, body)
 # Define server logic
 server <- function(input, output) {
@@ -91,13 +90,11 @@ server <- function(input, output) {
     if (length(input$categorySelect) > 0 ) {
       property <- subset(property, category_code_description %in% input$categorySelect)
     }
-## GOOD Z
     return(property)
   })
   # Reactive melted data
   mInput <- reactive({
     property <- propInput()
-    
     property_m <- property %>%
       melt(id = "category_code_description")
   })
@@ -112,9 +109,8 @@ server <- function(input, output) {
     scale_x_continuous(name="Sale Year", breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
       theme(legend.title = element_blank())
   })
-
   
- # A plot showing the height of characters
+ # A plot showing properties by ward
   output$plot_properties <- renderPlotly({
     property <- propInput()
     ggplot(data = property, aes(x = geographic_ward, fill = category_code_description)) +
@@ -123,9 +119,8 @@ server <- function(input, output) {
       scale_y_continuous( name="Count of Properties") +
       scale_x_continuous( name="Wards", breaks=c(1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 66))
   })
-  
 
-  # A plot showing the height of characters
+  # A plot showing the the fequency of properties purchased over the years
   output$plot_years <- renderPlotly({
     property <- propInput()
     ggplot(data = property, aes(x = sale_year, color = category_code_description ))  + 
@@ -136,25 +131,22 @@ server <- function(input, output) {
       theme(legend.title = element_blank())
   })
   
-  # Data table of characters
+  # Data table of Assessment
   output$table <- DT::renderDataTable({
     subset(propInput(), select = c(category_code_description, location, market_value, owner_1, parcel_number, sale_date, sale_price))
   })
-  ## STOP HERE
   # Mass mean info box
-  output$sale_year <- renderInfoBox({
+  output$avgmarket <- renderInfoBox({
     proper <- propInput()
-    num <- round(mean(proper$category_code_description, na.rm = T), 2)
-    
-    infoBox("Avg Mass", value = num, subtitle = paste(nrow(proper), "characters"), icon = icon("balance-scale"), color = "purple")
+    num <- round(mean(property.load$market_value, na.rm = T), 0)
+    valueBox(subtitle = "Average Market Value", value = num, icon = icon("credit-card"), color = "red")
+    #infoBox("Avg Market Value", value = num, subtitle = paste(nrow(proper), "characters"), icon = icon("balance-scale"), color = "purple")
   })
-  # Height mean value box
-  output$zipcode <- renderValueBox({
+  # Average sale price
+  output$avgprice <- renderValueBox({
     proper <- propInput()
-    num <- round(mean(proper$zipcode, na.rm = T), 2)
-    
-    
-    valueBox(subtitle = "Avg Height", value = num, icon = icon("sort-numeric-asc"), color = "green")
+    num <- round(mean(property.load$sale_price, na.rm = T), 0)
+    valueBox(subtitle = "Average Sale Price", value = num, icon = icon("credit-card"), color = "blue")
   })
 }
 
