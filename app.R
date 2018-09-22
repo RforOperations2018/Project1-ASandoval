@@ -43,7 +43,7 @@ sidebar <- dashboardSidebar(
     menuItem("Table", icon = icon("table"), tabName = "table", badgeLabel = "new", badgeColor = "blue"),
     # Category Select
     selectInput("categorySelect",
-                "Categories:",
+                "Types of Properties:",
                 choices = sort(unique(property.load$category_code_description)),
                 multiple = TRUE,
                 selectize = TRUE,
@@ -54,7 +54,13 @@ sidebar <- dashboardSidebar(
                 min = min(property.load$sale_year, na.rm = T),
                 max = max(property.load$sale_year, na.rm = T),
                 value = c(min(property.load$sale_year, na.rm = T), max(property.load$sale_year, na.rm = T)),
-                step = 25)
+                step = 25),
+  
+    # Check box Input for whether incident occured inside
+    checkboxGroupInput(inputId = "bathroomSelect",
+                       label = "How Many Bathrooms does the Property Have?:",
+                       choiceNames = list("0", "1", "2", "3", "4", "5", "6"),
+                       choiceValues = list("0", "1", "2", "3", "4", "5", "6"))
   )
 )
 
@@ -91,6 +97,10 @@ server <- function(input, output) {
     if (length(input$categorySelect) > 0 ) {
       property <- subset(property, category_code_description %in% input$categorySelect)
     }
+    # Is there a bathroom inside?
+    if (length(input$bathroomSelect) > 0 ) {
+      property <- subset(property, number_of_bathrooms %in% input$bathroomSelect)
+    }
     return(property)
   })
   # Reactive melted data
@@ -106,8 +116,10 @@ server <- function(input, output) {
     ggplot(data = property, aes(x = sale_year, y = change_value, fill = category_code_description))  + 
       geom_point(stroke = 0) +
       guides(fill=FALSE) +
-    scale_y_continuous(name="Property Change of Value", labels = comma, breaks=c(-10000000,-800000, -600000, -400000, -200000, 0, 200000, 400000, 600000, 800000, 1000000)) +
-    scale_x_continuous(name="Sale Year", breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
+      scale_y_continuous(name="Property Change of Value", labels = comma, breaks=c(-10000000,-800000, -600000,
+                                                                                   -400000, -200000, 0, 200000,
+                                                                                   400000, 600000, 800000, 1000000)) +
+      scale_x_continuous(name="Sale Year", breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
       theme(legend.title = element_blank())
   })
   
