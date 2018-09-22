@@ -8,13 +8,14 @@ library(shinythemes)
 library(stringr)
 library(shinydashboard)
 library(readr)
+require(scales)
 
 # Upload Philadelphia property assessment data from Opendataphilly
 # Many fields were removed to decrease data upload
 # Data can be found here: https://www.phila.gov/property/data/
 # There were originally 580,919 rows of data. I used a random number generator to get 2000 rows. 
 # It now runs faster. 
-property.load <- read_csv ("projectdata_5.csv")
+property.load <- read_csv ("projectdata_7.csv")
 
 pdf(NULL)
 ##GOOD A
@@ -40,20 +41,20 @@ sidebar <- dashboardSidebar(
     id = "tabs",
     menuItem("Plot", icon = icon("bar-chart"), tabName = "plot"),
     menuItem("Table", icon = icon("table"), tabName = "table", badgeLabel = "new", badgeColor = "red"),
-##GOOD Z   
+    # Category Select
     selectInput("categorySelect",
                 "Categories:",
                 choices = sort(unique(property.load$category_code_description)),
                 multiple = TRUE,
                 selectize = TRUE,
-                selected = c("Single Family", "Vacant Land", "Commercial")),
-    # Birth Selection
+                selected = c("Single Family", "Vacant Land", "Commercial", "Industrial")),
+    # Year Select
     sliderInput("yearSelect",
                 "Sale Year:",
                 min = min(property.load$sale_year, na.rm = T),
                 max = max(property.load$sale_year, na.rm = T),
                 value = c(min(property.load$sale_year, na.rm = T), max(property.load$sale_year, na.rm = T)),
-                step = 20)
+                step = 25)
   )
 )
 
@@ -66,8 +67,9 @@ body <- dashboardBody(tabItems(
           fluidRow(
             tabBox(title = "Plot",
                    width = 12,
-                   tabPanel("Sale Price", plotlyOutput("plot_price")),
-                   tabPanel("Zipcode", plotlyOutput("plot_zipcode")))
+                   tabPanel("Change in Value", plotlyOutput("plot_value")),
+                   tabPanel("Properties by Ward", plotlyOutput("plot_properties")),
+                   tabPanel("Purchases by Year", plotlyOutput("plot_years")))
           )
   ),
   tabItem("table",
@@ -101,22 +103,39 @@ server <- function(input, output) {
   })
 
   # A plot showing the sale price of properties
-  output$plot_price <- renderPlotly({
+  output$plot_value <- renderPlotly({
     property <- propInput()
     ggplot(data = property, aes(x = sale_year, y = change_value, fill = category_code_description))  + 
       geom_point(stroke = 0) +
-    scale_y_continuous(name="Change Value",breaks=c(-1000000, -500000, 0, 50000, 100000, 1000000, 10000000)) +
-    scale_x_continuous(name="Sale Year",breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010))
-  })
-  # A plot showing the height of characters
-  output$plot_zipcode <- renderPlotly({
-    property <- propInput()
-    ggplot(data = property, aes(x = year_built, y = total_area, fill = category_code_description )) + 
-      geom_point(stroke = 0) +
-      scale_y_continuous(name="Total Area") +
-      scale_x_continuous(name="Year Built")
+      guides(fill=FALSE) +
+    scale_y_continuous(name="Property Change of Value", labels = comma, breaks=c(-10000000,-800000, -600000, -400000, -200000, 0, 200000, 400000, 600000, 800000, 1000000)) +
+    scale_x_continuous(name="Sale Year", breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
+      theme(legend.title = element_blank())
   })
 
+  
+ # A plot showing the height of characters
+  output$plot_properties <- renderPlotly({
+    property <- propInput()
+    ggplot(data = property, aes(x = geographic_ward, fill = category_code_description)) +
+      geom_bar(position = "stack") +
+      guides(fill=FALSE) +
+      scale_y_continuous( name="Count of Properties") +
+      scale_x_continuous( name="Wards", breaks=c(1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 66))
+  })
+  
+
+  # A plot showing the height of characters
+  output$plot_years <- renderPlotly({
+    property <- propInput()
+    ggplot(data = property, aes(x = sale_year, color = category_code_description ))  + 
+      geom_freqpoly() +
+      guides(fill=FALSE) +
+      scale_x_continuous(name = "Sale Year",breaks=c(1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010)) +
+      scale_y_continuous(name = "Count of Property Purchases") +
+      theme(legend.title = element_blank())
+  })
+  
   # Data table of characters
   output$table <- DT::renderDataTable({
     subset(propInput(), select = c(category_code_description, location, market_value, owner_1, parcel_number, sale_date, sale_price))
