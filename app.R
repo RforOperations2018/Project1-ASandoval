@@ -18,7 +18,7 @@ require(scales)
 property.load <- read_csv ("projectdata_7.csv")
 
 pdf(NULL)
-##GOOD A
+
 header <- dashboardHeader(title = "Property Records Dashboard",
                           dropdownMenu(type = "notifications",
                                        notificationItem(text = "New Users!", 
@@ -60,7 +60,15 @@ sidebar <- dashboardSidebar(
     checkboxGroupInput(inputId = "bathroomSelect",
                        label = "How Many Bathrooms does the Property Have?:",
                        choiceNames = list("0", "1", "2", "3", "4", "5", "6"),
-                       choiceValues = list("0", "1", "2", "3", "4", "5", "6"))
+                       choiceValues = list("0", "1", "2", "3", "4", "5", "6")),
+    
+    # Numeric input for ward
+    numericInput(inputId = "wardSelect", 
+                 label = "Wards", 
+                 min = min(property.load$geographic_ward, na.rm = T), 
+                 max = max(property.load$geographic_ward, na.rm = T),
+                 value = min(property.load$geographic_ward, na.rm = T),
+                 step = 1)
   )
 )
 
@@ -74,7 +82,7 @@ body <- dashboardBody(tabItems(
           fluidRow(
             tabBox(title = "Plot",
                    width = 12,
-                   tabPanel("Change in Value", plotlyOutput("plot_value")),
+                   tabPanel("Property Change of Value", plotlyOutput("plot_value")),
                    tabPanel("Properties by Ward", plotlyOutput("plot_properties")),
                    tabPanel("Purchases by Year", plotlyOutput("plot_years")))
           )
@@ -91,8 +99,10 @@ ui <- dashboardPage(header, sidebar, body)
 server <- function(input, output) {
   propInput <- reactive({
     property <- property.load  %>%
+      
       # Slider Filter
       filter(sale_year >= input$yearSelect[1] & sale_year <= input$yearSelect[2])
+    
     # Category Filter
     if (length(input$categorySelect) > 0 ) {
       property <- subset(property, category_code_description %in% input$categorySelect)
@@ -101,6 +111,10 @@ server <- function(input, output) {
     if (length(input$bathroomSelect) > 0 ) {
       property <- subset(property, number_of_bathrooms %in% input$bathroomSelect)
     }
+    if (length(input$wardSelect) > 0) {
+      property <- subset(property, geographic_ward %in% input$wardSelect)
+    }  
+  
     return(property)
   })
   # Reactive melted data
