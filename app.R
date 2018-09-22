@@ -21,12 +21,12 @@ pdf(NULL)
 ##GOOD A
 header <- dashboardHeader(title = "Property Records Dashboard",
                           dropdownMenu(type = "notifications",
-                                       notificationItem(text = "yass", 
+                                       notificationItem(text = "New Users!", 
                                                         icon = icon("users"))
                           ),
                           dropdownMenu(type = "tasks", badgeStatus = "success",
                                        taskItem(value = 110, color = "red",
-                                                "loooooooaddddiiinng")
+                                                "loading")
                           ),
                           dropdownMenu(type = "messages",
                                        messageItem(
@@ -40,7 +40,7 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     id = "tabs",
     menuItem("Plot", icon = icon("bar-chart"), tabName = "plot"),
-    menuItem("Table", icon = icon("table"), tabName = "table", badgeLabel = "new", badgeColor = "red"),
+    menuItem("Table", icon = icon("table"), tabName = "table", badgeLabel = "new", badgeColor = "blue"),
     # Category Select
     selectInput("categorySelect",
                 "Categories:",
@@ -74,19 +74,19 @@ body <- dashboardBody(tabItems(
   ),
   tabItem("table",
           fluidPage(
-            box(title = "DATAAAA", DT::dataTableOutput("table"), width = 12))
+            box(title = "Philadelphia Property Assessment Data", DT::dataTableOutput("table"), width = 12))
   )
 )
 )
 
+
 ui <- dashboardPage(header, sidebar, body)
-## GOOD A
 # Define server logic
 server <- function(input, output) {
   propInput <- reactive({
-    property <- property.load # %>%
+    property <- property.load  %>%
       # Slider Filter
-      # dplyr::filter(sale_year >= input$yearSelect[1] & sale_year <= input$saleSelect[2])
+      filter(sale_year >= input$yearSelect[1] & sale_year <= input$yearSelect[2])
     # Category Filter
     if (length(input$categorySelect) > 0 ) {
       property <- subset(property, category_code_description %in% input$categorySelect)
