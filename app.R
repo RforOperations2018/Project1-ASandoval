@@ -62,7 +62,8 @@ body <- dashboardBody(tabItems(
   tabItem("plot",
           fluidRow(
             infoBoxOutput("avgmarket"),
-            valueBoxOutput("avgprice")
+            infoBoxOutput("avgprice"),
+            infoBoxOutput("totaltaxland")
           ),
           fluidRow(
             tabBox(title = "Plot",
@@ -135,11 +136,11 @@ server <- function(input, output) {
   output$table <- DT::renderDataTable({
     subset(propInput(), select = c(category_code_description, location, market_value, owner_1, parcel_number, sale_date, sale_price))
   })
-  # Mass mean info box
+  # Average current market value
   output$avgmarket <- renderInfoBox({
     proper <- propInput()
     num <- round(mean(property.load$market_value, na.rm = T), 0)
-    valueBox(subtitle = "Average Market Value", value = num, icon = icon("credit-card"), color = "red")
+    valueBox(subtitle = "Average Market Value", value = num, icon = icon("usd"), color = "red")
     #infoBox("Avg Market Value", value = num, subtitle = paste(nrow(proper), "characters"), icon = icon("balance-scale"), color = "purple")
   })
   # Average sale price
@@ -147,6 +148,12 @@ server <- function(input, output) {
     proper <- propInput()
     num <- round(mean(property.load$sale_price, na.rm = T), 0)
     valueBox(subtitle = "Average Sale Price", value = num, icon = icon("credit-card"), color = "blue")
+  })
+  # Total Taxable Land
+  output$totaltaxland <- renderValueBox({
+    proper <- propInput()
+    num <- sum(property.load$taxable_land, na.rm = T)
+    valueBox(subtitle = "Total Taxable Land", value = num, icon = icon("thumbs-up"), color = "light-blue")
   })
 }
 
