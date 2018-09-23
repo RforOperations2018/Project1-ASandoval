@@ -36,6 +36,7 @@ sidebar <- dashboardSidebar(
     id = "tabs",
     menuItem("Plot", icon = icon("bar-chart"), tabName = "plot"),
     menuItem("Table", icon = icon("table"), tabName = "table"),
+    # No third page?!
     # Category Select
     selectInput("categorySelect",
                 "Types of Properties:",
@@ -167,6 +168,7 @@ server <- function(input, output) {
   output$avgmarket <- renderInfoBox({
     proper <- propInput()
     num <- round(mean(property.load$market_value, na.rm = T), 0)
+    # When you're dealing with values in the thousands wrapping your value in prettyNum() will give you a nice thousands seperator
     valueBox(subtitle = "Average Market Value", value = num, icon = icon("usd"), color = "red")
   })
   # Average sale price box
